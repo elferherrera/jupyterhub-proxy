@@ -148,7 +148,7 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
 			}
 
-			log.Println("Modified: ", r.URL.Path)
+			log.Println("Modified: ", req.URL.Path)
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
 			}
