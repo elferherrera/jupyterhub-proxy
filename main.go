@@ -137,18 +137,20 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			log.Println("Received: ", req.URL.Path)
-
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
 
-			// Static files need to maintain the complete request path
-			if !strings.Contains(req.URL.Path, static) {
-				req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
-			}
+			log.Println("Received: ", req.URL.Path)
+			log.Println("Scheme: ", req.URL.Scheme)
+			log.Println("Received: ", req.URL.Host)
 
-			log.Println("Modified: ", req.URL.Path)
+			// Static files need to maintain the complete request path
+			// if !strings.Contains(req.URL.Path, static) {
+			// 	req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			// 	req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			// }
+
+			// log.Println("Modified: ", req.URL.Path)
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
 			}
