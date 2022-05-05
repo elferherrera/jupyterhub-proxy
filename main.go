@@ -137,20 +137,20 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func logString(log_msg string) {
 	log.Println(log_msg)			
 
-	path := "/home/jovyan/log.log"
+	// path := "/home/jovyan/log.log"
 
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        log.Fatal(err)
-    }
+	// f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+ //    if err != nil {
+ //        log.Fatal(err)
+ //    }
 
-	if _, err := f.WriteString(log_msg + "\n"); err != nil {
-        log.Fatal(err)
-    }
+	// if _, err := f.WriteString(log_msg + "\n"); err != nil {
+ //        log.Fatal(err)
+ //    }
 
-    if err := f.Close(); err != nil {
-        log.Fatal(err)
-    }
+ //    if err := f.Close(); err != nil {
+ //        log.Fatal(err)
+ //    }
 	
 }
 
@@ -166,8 +166,8 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			logString("Scheme: " + req.URL.Scheme)
 			logString("Host: " + req.URL.Host)
 
-			req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-			req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			// req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			// req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
 
 			logString("Modified Path: " + req.URL.Path)
 			logString("----------------------")
