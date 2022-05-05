@@ -24,7 +24,6 @@ var (
 	callbackUrl   = os.Getenv("JUPYTERHUB_OAUTH_CALLBACK_URL")
 	servicePrefix = os.Getenv("JUPYTERHUB_SERVICE_PREFIX")
 	jhUser        = os.Getenv("JUPYTERHUB_USER")
-	static        = "/static/desktop/"
 	cookieSource  = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 	target        = flag.String("target", "http://127.0.0.1:8080", "the target host/port")
 	port          = flag.String("port", "8888", "the port to serve on")
@@ -122,7 +121,8 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
-	if validateCookie(r) {
+	// if validateCookie(r) {
+	if true {
 		ah.wrappedHandler.ServeHTTP(w, r)
 	} else if r.URL.Path == callbackUrl {
 		handleCallback(w, r)
@@ -134,23 +134,44 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func logString(log_msg string) {
+	log.Println(log_msg)			
+
+	path := "/home/jovyan/log.log"
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+	if _, err := f.WriteString(log_msg + "\n"); err != nil {
+        log.Fatal(err)
+    }
+
+    if err := f.Close(); err != nil {
+        log.Fatal(err)
+    }
+	
+}
+
 func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
 
-			log.Println("Received: ", req.URL.Path)
-			log.Println("Scheme: ", req.URL.Scheme)
-			log.Println("Received: ", req.URL.Host)
+			logString("----------------------")
+			logString("Received: " + req.URL.Path)
+			logString("RawPath: " + req.URL.RawPath)
+			logString("Scheme: " + req.URL.Scheme)
+			logString("Host: " + req.URL.Host)
 
-			// Static files need to maintain the complete request path
-			// if !strings.Contains(req.URL.Path, static) {
-			// 	req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-			// 	req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
-			// }
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
 
-			// log.Println("Modified: ", req.URL.Path)
+			logString("Modified Path: " + req.URL.Path)
+			logString("----------------------")
+			
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
 			}
@@ -161,6 +182,8 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 func main() {
 	flag.Parse()
 	backend, err := url.Parse(*target)
+	log.Println("Target: ", *target)			
+
 	if err != nil {
 		log.Fatalln(err)
 	}
