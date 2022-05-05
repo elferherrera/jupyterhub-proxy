@@ -121,8 +121,7 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 
 func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL.Path)
-	// if validateCookie(r) {
-	if true {
+	if validateCookie(r) {
 		ah.wrappedHandler.ServeHTTP(w, r)
 	} else if r.URL.Path == callbackUrl {
 		handleCallback(w, r)
@@ -134,43 +133,23 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func logString(log_msg string) {
-	log.Println(log_msg)			
-
-	// path := "/home/jovyan/log.log"
-
-	// f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
- //    if err != nil {
- //        log.Fatal(err)
- //    }
-
-	// if _, err := f.WriteString(log_msg + "\n"); err != nil {
- //        log.Fatal(err)
- //    }
-
- //    if err := f.Close(); err != nil {
- //        log.Fatal(err)
- //    }
-	
-}
-
 func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
 			req.URL.Host = target.Host
 
-			logString("----------------------")
-			logString("Received: " + req.URL.Path)
-			logString("RawPath: " + req.URL.RawPath)
-			logString("Scheme: " + req.URL.Scheme)
-			logString("Host: " + req.URL.Host)
+			log.Println("----------------------")
+			log.Println("Received: " + req.URL.Path)
+			log.Println("RawPath: " + req.URL.RawPath)
+			log.Println("Scheme: " + req.URL.Scheme)
+			log.Println("Host: " + req.URL.Host)
 
-			// req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-			// req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
 
-			logString("Modified Path: " + req.URL.Path)
-			logString("----------------------")
+			log.Println("Modified Path: " + req.URL.Path)
+			log.Println("----------------------")
 			
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
