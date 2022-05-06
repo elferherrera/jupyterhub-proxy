@@ -23,6 +23,7 @@ var (
 	clientId      = os.Getenv("JUPYTERHUB_CLIENT_ID")
 	callbackUrl   = os.Getenv("JUPYTERHUB_OAUTH_CALLBACK_URL")
 	servicePrefix = os.Getenv("JUPYTERHUB_SERVICE_PREFIX")
+	static_marker = "/static/desktop/"
 	jhUser        = os.Getenv("JUPYTERHUB_USER")
 	cookieSource  = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 	target        = flag.String("target", "http://127.0.0.1:8080", "the target host/port")
@@ -145,8 +146,10 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			log.Println("Scheme: " + req.URL.Scheme)
 			log.Println("Host: " + req.URL.Host)
 
-			// req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-			// req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			if !strings.Contains(req.URL.Path, static_marker) {
+				req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			}
 
 			log.Println("Modified Path: " + req.URL.Path)
 			log.Println("----------------------")
