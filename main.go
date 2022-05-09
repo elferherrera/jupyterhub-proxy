@@ -146,10 +146,10 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			log.Println("Scheme: " + req.URL.Scheme)
 			log.Println("Host: " + req.URL.Host)
 
-			if !strings.Contains(req.URL.Path, static_marker) {
-				req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
-			}
+			// if !strings.Contains(req.URL.Path, static_marker) {
+			// 	req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			// 	req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
+			// }
 
 			log.Println("Modified Path: " + req.URL.Path)
 			log.Println("----------------------")
