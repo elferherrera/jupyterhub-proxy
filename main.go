@@ -187,6 +187,13 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 		    resp.Body = body
 		    resp.ContentLength = int64(len(b))
 		    resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
+			
+			location := resp.Header.Get("Location")
+			if location != "" {
+				new_location := strings.TrimSuffix(servicePrefix, "/") + location
+				log.Println("Redirection: " + new_location)
+				resp.Header.Set("Location", new_location)
+			}
 
 		    return nil		
 		},
