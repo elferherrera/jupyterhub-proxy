@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -135,6 +138,13 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
+
+	reg, err := regexp.Compile("(['\"])(/desktop/|/api/)")
+	if err != nil {
+		log.Println("Regex compile failed: %s", err)
+		os.Exit(1)
+	}
+
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
@@ -153,10 +163,31 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 
 			log.Println("Modified Path: " + req.URL.Path)
 			log.Println("----------------------")
-			
+
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
 			}
+		},
+		ModifyResponse: func(resp *http.Response) (err error) {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			err = resp.Body.Close()
+			if err != nil {
+				return err
+			}
+
+			complete_location := "$1" + strings.TrimSuffix(servicePrefix, "/") + "$2"
+			b = reg.ReplaceAll(b, []byte(complete_location))
+			body := ioutil.NopCloser(bytes.NewReader(b))
+
+			resp.Body = body
+			resp.ContentLength = int64(len(b))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
+
+			return nil
 		},
 	}
 }
@@ -164,7 +195,7 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 func main() {
 	flag.Parse()
 	backend, err := url.Parse(*target)
-	log.Println("Target: ", *target)			
+	log.Println("Target: ", *target)
 
 	if err != nil {
 		log.Fatalln(err)
