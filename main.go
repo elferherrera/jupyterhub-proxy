@@ -11,10 +11,10 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"regexp"
 
 	"github.com/gorilla/securecookie"
 )
@@ -26,8 +26,8 @@ var (
 	clientId      = os.Getenv("JUPYTERHUB_CLIENT_ID")
 	callbackUrl   = os.Getenv("JUPYTERHUB_OAUTH_CALLBACK_URL")
 	servicePrefix = os.Getenv("JUPYTERHUB_SERVICE_PREFIX")
-	static_marker = "/static/desktop/"
 	jhUser        = os.Getenv("JUPYTERHUB_USER")
+	locations	  = os.Getenv("HUE_LOCATIONS")
 	cookieSource  = securecookie.New(securecookie.GenerateRandomKey(32), securecookie.GenerateRandomKey(32))
 	target        = flag.String("target", "http://127.0.0.1:8080", "the target host/port")
 	port          = flag.String("port", "8888", "the port to serve on")
@@ -139,12 +139,15 @@ func (ah JHOAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 
-	reg, err := regexp.Compile("(['\"])(/desktop/|/api/)")
-	if err != nil {
-		log.Println("Regex compile failed: %s", err)
-		os.Exit(1)
-	}
-
+	// The created matching string that is used to replace the service prefix
+	matching := "(['\"])(" + locations + ")"
+	log.Println(matching)
+	reg, err := regexp.Compile (matching)
+    if err != nil {
+        log.Println("Regex compile failed: %s", err)
+        os.Exit (1);
+    }	
+	
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
@@ -156,38 +159,36 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			log.Println("Scheme: " + req.URL.Scheme)
 			log.Println("Host: " + req.URL.Host)
 
-			if !strings.Contains(req.URL.Path, static_marker) {
-				req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
-				req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
-			}
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, strings.TrimSuffix(servicePrefix, "/"))
+			req.URL.RawPath = strings.TrimPrefix(req.URL.RawPath, strings.TrimSuffix(servicePrefix, "/"))
 
 			log.Println("Modified Path: " + req.URL.Path)
 			log.Println("----------------------")
-
+			
 			if _, ok := req.Header["User-Agent"]; !ok {
 				req.Header.Set("User-Agent", "") // explicitly disable User-Agent so it's not set to default value
 			}
 		},
 		ModifyResponse: func(resp *http.Response) (err error) {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return err
-			}
+		    b, err := ioutil.ReadAll(resp.Body) 
+		    if err != nil {
+		        return  err
+		    }
 
-			err = resp.Body.Close()
-			if err != nil {
-				return err
-			}
+		    err = resp.Body.Close()
+		    if err != nil {
+		        return err
+		    }
 
-			complete_location := "$1" + strings.TrimSuffix(servicePrefix, "/") + "$2"
+			complete_location :=  "$1" + strings.TrimSuffix(servicePrefix, "/") + "$2"
 			b = reg.ReplaceAll(b, []byte(complete_location))
-			body := ioutil.NopCloser(bytes.NewReader(b))
+		    body := ioutil.NopCloser(bytes.NewReader(b))
 
-			resp.Body = body
-			resp.ContentLength = int64(len(b))
-			resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
+		    resp.Body = body
+		    resp.ContentLength = int64(len(b))
+		    resp.Header.Set("Content-Length", strconv.Itoa(len(b)))
 
-			return nil
+		    return nil		
 		},
 	}
 }
@@ -195,7 +196,7 @@ func newPathTrimmingReverseProxy(target *url.URL) *httputil.ReverseProxy {
 func main() {
 	flag.Parse()
 	backend, err := url.Parse(*target)
-	log.Println("Target: ", *target)
+	log.Println("Target: ", *target)			
 
 	if err != nil {
 		log.Fatalln(err)
